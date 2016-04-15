@@ -83,7 +83,7 @@ class Mimir(object):
             print(entry)
 
     def list_authors(self, _):
-        authors = {author for entry in self.data.itervalues() 
+        authors = {author for entry in self.data.itervalues()
                    for author in entry['author'] if 'author' in entry}
         for author in sorted(authors):
             print(author)
