@@ -1,0 +1,15 @@
+
+_mimir() {
+  descriptions=("${(@f)$( _ARGCOMPLETE=1 ZSH_VERSION=$ZSH_VERSION \
+    PREQUOTE=$QIPREFIX CURRENT=$CURRENT PREFIX=$PREFIX SUFFIX=$SUFFIX \
+    $words 8>&1 1>/dev/null 2>>debug 9>>debug)}")
+  completions=("${(@)descriptions%% *}")
+  if [ -n "${completions}" ]; then
+    compadd -l -d descriptions -- "${completions[@]}"
+  fi
+  return 0
+}
+
+autoload -U compinit && compinit
+compdef _mimir mimir
+
