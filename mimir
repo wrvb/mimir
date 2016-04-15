@@ -78,15 +78,13 @@ class Mimir(object):
         if not os.path.islink(link_name):
             os.symlink(paper_path, link_name)
 
-    def list(self, _):
-        for entry in self.data:
-            print(entry)
+    def authors(self):
+        return sorted({author for entry in self.data.itervalues()
+                       for author in entry['author'] if 'author' in entry})
 
-    def list_authors(self, _):
-        authors = {author for entry in self.data.itervalues()
-                   for author in entry['author'] if 'author' in entry}
-        for author in sorted(authors):
-            print(author)
+    def titles(self):
+        return sorted(entry['title'] for entry in self.data.itervalues()
+                      if 'title' in entry)
 
     def tags(self):
         tag_directory = self.get_relative_name('tags')
@@ -94,10 +92,6 @@ class Mimir(object):
             os.mkdir(tag_directory)
         return [item for item in os.listdir(tag_directory)
                 if os.path.isdir(os.path.join(tag_directory, item))]
-
-    def list_tags(self, _):
-        for tag in self.tags():
-            print(tag)
 
     def annotate(self, paper):
         """Add notes to a paper"""
@@ -115,11 +109,39 @@ def is_dir(dirname):
     else:
         return dirname
 
-def paper_name_completer(prefix, parsed_args, **kwargs):
-    return (entry for entry in Mimir(parsed_args.store).data)
+def list_entries(args):
+    for entry in sorted(Mimir(args.store).data):
+        print(entry)
 
-def tag_name_completer(prefix, parsed_args, **kwargs):
+def list_tags(args):
+    for tag in Mimir(args.store).tags():
+        print(tag)
+
+def list_authors(args):
+    for author in Mimir(args.store).authors():
+        print(author)
+
+def list_titles(args):
+    for title in Mimir(args.store).titles():
+        print(title)
+
+def add_paper(args):
+    pass
+
+def tag_paper(args):
+    pass
+
+def entry_completer(prefix, parsed_args, **kwargs):
+    return sorted(Mimir(parsed_args.store).data)
+
+def tag_completer(prefix, parsed_args, **kwargs):
     return Mimir(parsed_args.store).tags()
+
+def author_completer(prefix, parsed_args, **kwargs):
+    return Mimir(parsed_args.store).authors()
+
+def title_completer(prefix, parsed_args, **kwargs):
+    return Mimir(parsed_args.store).titles()
 
 def main():
     parser = argparse.ArgumentParser(
@@ -134,37 +156,33 @@ def main():
 
     subparsers = parser.add_subparsers(title="Commands", metavar='commands')
 
-    parser_add = subparsers.add_parser('add', help="Add a paper")
-    # parser_add.add_argument('-f', '--foo', action='store_true',
-    #                         help='A flag for add')
-    parser_add.set_defaults(command='add')
-
     parser_list = subparsers.add_parser('list', help="List entries")
-    parser_list.set_defaults(command='list')
+    parser_list.set_defaults(command=list_entries)
 
     parser_list = subparsers.add_parser('list-authors', help="List authors")
-    parser_list.set_defaults(command='list_authors')
+    parser_list.set_defaults(command=list_authors)
+
+    parser_list_tags = subparsers.add_parser('list-tags', help="List entries")
+    parser_list_tags.set_defaults(command=list_tags)
+
+    parser_add = subparsers.add_parser('add', help="Add a paper")
+    parser_add.set_defaults(command=add_paper)
 
     parser_tag = subparsers.add_parser('tag', help="Tag a paper")
+    parser_tag.set_defaults(command=tag_paper)
     paper_name = parser_tag.add_argument('paper', help='Paper to tag')
-    paper_name.completer = paper_name_completer
+    paper_name.completer = entry_completer
     tag_name = parser_tag.add_argument('tag_name', help='Name of tag')
-    tag_name.completer = tag_name_completer
-
-    parser_tag.set_defaults(command='tag')
-
-    parser_list_tags = subparsers.add_parser('list_tags', help="List entries")
-    parser_list_tags.set_defaults(command='list_tags')
+    tag_name.completer = tag_completer
 
     argcomplete.autocomplete(parser, always_complete_options=False)
 
     args = parser.parse_args()
+
     try:
-        mimir = Mimir(args.store)
-        getattr(mimir, args.command)(args)
+        args.command(args)
     except Exception as error: # pylint: disable=broad-except
         print("ERROR:", error, file=sys.stderr)
-
 
 if __name__ == "__main__":
     main()
