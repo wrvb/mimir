@@ -8,8 +8,7 @@ import argparse
 
 import yaml
 import git
-
-import mimisbrunnr.zshcomplete
+import argcomplete
 
 DEFAULT_STORE = 'example'
 INDEX_FILENAME = 'index.yaml'
@@ -146,7 +145,7 @@ def main():
     parser_list_tags = subparsers.add_parser('list_tags', help="List entries")
     parser_list_tags.set_defaults(command='list_tags')
 
-    mimisbrunnr.zshcomplete.autocomplete(parser)
+    argcomplete.autocomplete(parser, always_complete_options=False)
 
     args = parser.parse_args()
     try:
